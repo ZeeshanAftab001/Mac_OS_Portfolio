@@ -3,10 +3,12 @@ import { useGSAP } from '@gsap/react';
 import { gsap } from 'gsap';
 import React, { useRef } from 'react';
 import { Tooltip } from 'react-tooltip';
+import useWindowStore from '#store/windows';
 
 function Dock() {
     const docRef = useRef(null);
-
+    const { openWindow, closeWindow, windows } = useWindowStore();
+    
     useGSAP(() => {
         const dock = docRef.current;
         if (!dock) return;
@@ -186,11 +188,22 @@ function Dock() {
         };
     }, []);
 
-    const toggleApp = ({ id, canOpen }) => {
-        if (!canOpen) return;
+    const toggleApp = (app) => {
+        if (!app.canOpen) return;
+
+        const window = windows[app.id];
         
+        // Fix: Check if window exists and has isOpen property
+        if (window?.isOpen) {
+            closeWindow(app.id);
+        } else {
+            openWindow(app.id);
+        }
+
+        console.log(window)
+
         // Add click animation
-        const button = docRef.current?.querySelector(`[aria-label="${dockApps.find(app => app.id === id)?.name}"]`);
+        const button = docRef.current?.querySelector(`button[aria-label="${app.name}"]`);
         if (button) {
             gsap.to(button, {
                 scale: 0.9,
@@ -199,8 +212,7 @@ function Dock() {
                 repeat: 1,
                 ease: "power2.inOut",
                 onComplete: () => {
-                    // Your app opening logic here
-                    console.log(`Opening app: ${id}`);
+                    console.log(`${window?.isOpen ? 'Closing' : 'Opening'} app: ${app.id}`);
                 }
             });
         }
@@ -209,24 +221,24 @@ function Dock() {
     return (
         <section id='dock'>
             <div ref={docRef} className="dock-container">
-                {dockApps.map(({ id, name, icon, canOpen }) => (
-                    <div key={id} className="relative flex justify-center items-center dock-app">
+                {dockApps.map((app) => (
+                    <div key={app.id} className="relative flex justify-center items-center dock-app">
                         <button
                             type='button'
                             className='dock-icon will-change-transform cursor-pointer'
-                            aria-label={name}
+                            aria-label={app.name}
                             data-tooltip-id="dock-tooltip"
-                            data-tooltip-content={name}
+                            data-tooltip-content={app.name}
                             data-tooltip-delay-show={150}
-                            disabled={!canOpen}
-                            onClick={() => toggleApp({ id, canOpen })}
+                            disabled={!app.canOpen}
+                            onClick={() => toggleApp(app)}
                         >
                             <img 
-                                src={`/images/${icon}`}
+                                src={`/images/${app.icon}`}
                                 loading='lazy'
-                                alt={name} 
+                                alt={app.name} 
                                 className={`w-full h-full object-contain transition-all duration-200 ${
-                                    canOpen ? 'hover:brightness-110' : 'opacity-60 grayscale'
+                                    app.canOpen ? 'hover:brightness-110' : 'opacity-60 grayscale'
                                 }`}
                             />
                         </button>
