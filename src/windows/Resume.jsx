@@ -12,6 +12,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url
 ).toString()
 
+/* function to download */
 function downloadPDF() {
   const link = document.createElement("a");
   link.href = "files/resume.pdf";
